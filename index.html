@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Printer Comparison</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The application is structured as an interactive dashboard. The primary user flow starts with a high-level visual comparison via a central bar chart, allowing users to grasp key differences at a glance. Below this, a grid of detailed cards provides comprehensive information for each product. The core interaction is a "Sort by" control that dynamically updates both the chart and the card grid, empowering users to analyze the data based on their priorities (e.g., Price, Speed). This structure was chosen to guide the user from a broad overview to specific details in an intuitive, task-oriented manner, making complex comparison easier than navigating a static table. -->
+    <!-- Visualization & Content Choices: The core of the report is comparing numerical specs. Goal: Compare. Viz: An interactive horizontal bar chart (Chart.js/Canvas) is used as it's ideal for comparing quantitative values across distinct categories (printers). Interaction: A dropdown allows users to change the metric being compared, instantly re-sorting and re-rendering the chart and detail cards. This provides a multi-faceted comparison within a single view. Goal: Inform/Organize. Viz: A responsive grid of HTML/Tailwind cards displays all printer specs. Interaction: These cards are linked to the chart; they reorder with the chart and could be enhanced with hover effects. Justification: This two-part structure (chart + cards) presents information in layers of complexity, improving user comprehension and preventing information overload. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 500px;
+            }
+        }
+        .card-enter {
+            animation: card-enter 0.5s ease-out forwards;
+        }
+        @keyframes card-enter {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-amber-50 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Interactive Printer Comparison</h1>
+            <p class="mt-2 text-lg text-gray-600">Visually compare monochrome laser printers to find the perfect one for your needs.</p>
+        </header>
+
+        <main>
+            <section id="visual-comparison" class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900 mb-2 sm:mb-0">Feature Comparison Chart</h2>
+                    <div class="flex items-center space-x-2">
+                        <label for="sort-select" class="font-semibold text-gray-700">Sort by:</label>
+                        <select id="sort-select" class="bg-gray-100 border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition">
+                            <option value="price" selected>Price (Lowest to Highest)</option>
+                            <option value="speed">Print Speed (Fastest First)</option>
+                            <option value="tonerYield">Toner Yield (Highest First)</option>
+                            <option value="memory">Memory (Highest First)</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="text-gray-600 mb-6 text-center">
+                    This chart provides a direct visual comparison of the printers based on the selected feature. Use the dropdown to change the metric and see how the printers stack up against each other. Printers with a value of '0' or 'Not Specified' are excluded from the current view.
+                </p>
+                <div class="chart-container">
+                    <canvas id="printerChart"></canvas>
+                </div>
+            </section>
+
+            <section id="detailed-view">
+                 <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900">Detailed Printer Specifications</h2>
+                    <p class="mt-2 text-gray-600 max-w-3xl mx-auto">
+                        Here you can find a detailed breakdown of each printer's features. The order of the printers below matches the sorting in the chart above, allowing you to easily cross-reference the visual data with the complete specifications.
+                    </p>
+                </div>
+                <div id="details-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            </section>
+        </main>
+        
+        <footer class="text-center mt-12 py-4 border-t border-gray-200">
+            <p class="text-sm text-gray-500">Interactive dashboard created to simplify product comparison. Data sourced from public listings.</p>
+        </footer>
+    </div>
+
+    <script>
+        const printerData = [
+            { id: 1, name: "Brother HL-L5210DN", price: 22050, speed: 48, tonerYield: 11000, memory: 1024, connectivity: "LAN, USB", duplex: true, features: "New Launch, LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5" },
+            { id: 2, name: "Brother HL-B2080DW", price: 17999, speed: 34, tonerYield: 2600, memory: 64, connectivity: "Wi-Fi, USB", duplex: true, features: "Wireless, LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5" },
+            { id: 3, name: "Brother HL-L5000D", price: 21000, speed: 40, tonerYield: 8000, memory: 512, connectivity: "USB 2.0, Parallel", duplex: true, features: "1-line LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5" },
+            { id: 4, name: "Brother HL-L2460DN", price: 13500, speed: 34, tonerYield: 3000, memory: 128, connectivity: "LAN, USB", duplex: true, features: "New Launch, LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5" },
+            { id: 5, name: "Canon MF445dw", price: 61990, speed: 38, tonerYield: 3100, memory: 1024, connectivity: "Wireless, Mobile Ready", duplex: true, features: "All-in-One (MFP)", colourMode: "Monochrome", paperSizes: "A4, Letter, Legal" },
+            { id: 6, name: "HP Laserjet Pro M501dn", price: 44690, speed: 45, tonerYield: 9000, memory: 256, connectivity: "LAN, USB", duplex: true, features: "2-line LCD", colourMode: "Monochrome", paperSizes: "A4, Letter, Legal" }
+        ];
+
+        const detailsGrid = document.getElementById('details-grid');
+        const sortSelect = document.getElementById('sort-select');
+        const ctx = document.getElementById('printerChart').getContext('2d');
+        let printerChart;
+
+        const renderDetails = (data) => {
+            detailsGrid.innerHTML = '';
+            data.forEach((printer, index) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:scale-105 card-enter';
+                card.style.animationDelay = `${index * 100}ms`;
+                
+                let connectivityIcons = '';
+                if (printer.connectivity.includes('Wi-Fi') || printer.connectivity.includes('Wireless')) connectivityIcons += '<span title="Wi-Fi" class="text-xl">📶</span>';
+                if (printer.connectivity.includes('LAN')) connectivityIcons += '<span title="LAN" class="text-xl">🌐</span>';
+                if (printer.connectivity.includes('USB')) connectivityIcons += '<span title="USB" class="text-xl">🔌</span>';
+
+                card.innerHTML = `
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">${printer.name}</h3>
+                    <p class="text-2xl font-extrabold text-amber-600 mb-4">₹${printer.price.toLocaleString('en-IN')}</p>
+                    <div class="space-y-3 text-sm text-gray-700 flex-grow">
+                        <p class="flex justify-between"><strong>Print Speed:</strong> <span class="font-semibold">${printer.speed} PPM</span></p>
+                        <p class="flex justify-between"><strong>Inbox Toner:</strong> <span class="font-semibold">${printer.tonerYield.toLocaleString('en-IN')} Pages</span></p>
+                        <p class="flex justify-between"><strong>Memory:</strong> <span class="font-semibold">${printer.memory} MB</span></p>
+                        <p class="flex justify-between"><strong>Duplex:</strong> <span class="font-semibold text-green-600">${printer.duplex ? '✔ Automatic' : '✖ Manual'}</span></p>
+                        <p class="flex justify-between items-center"><strong>Connectivity:</strong> <span class="flex gap-2">${connectivityIcons}</span></p>
+                        <p class="flex justify-between"><strong>Colour Mode:</strong> <span class="font-semibold">${printer.colourMode}</span></p>
+                        <p class="flex justify-between"><strong>Paper Sizes:</strong> <span class="font-semibold">${printer.paperSizes}</span></p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <p class="text-sm text-gray-600 font-medium"><strong>Key Feature:</strong> ${printer.features}</p>
+                    </div>
+                `;
+                detailsGrid.appendChild(card);
+            });
+        };
+
+        const updateChart = (sortKey) => {
+            let ascending = true;
+            if (sortKey === 'speed' || sortKey === 'tonerYield' || sortKey === 'memory') {
+                ascending = false;
+            }
+
+            const sortedData = [...printerData]
+                .filter(p => p[sortKey] > 0)
+                .sort((a, b) => {
+                    return ascending ? a[sortKey] - b[sortKey] : b[sortKey] - a[sortKey];
+                });
+
+            renderDetails(sortedData);
+
+            const labels = sortedData.map(p => p.name);
+            const dataValues = sortedData.map(p => p[sortKey]);
+            
+            let labelString = '';
+            let chartColors = {
+                backgroundColor: 'rgba(191, 123, 39, 0.6)',
+                borderColor: 'rgba(191, 123, 39, 1)',
+                hoverBackgroundColor: 'rgba(146, 89, 21, 0.8)',
+                hoverBorderColor: 'rgba(146, 89, 21, 1)'
+            };
+
+            switch (sortKey) {
+                case 'price':
+                    labelString = 'Price (INR)';
+                    break;
+                case 'speed':
+                    labelString = 'Print Speed (PPM)';
+                     chartColors = {
+                        backgroundColor: 'rgba(2, 132, 199, 0.6)',
+                        borderColor: 'rgba(2, 132, 199, 1)',
+                        hoverBackgroundColor: 'rgba(3, 105, 161, 0.8)',
+                        hoverBorderColor: 'rgba(3, 105, 161, 1)'
+                    };
+                    break;
+                case 'tonerYield':
+                    labelString = 'Inbox Toner Yield (Pages)';
+                     chartColors = {
+                        backgroundColor: 'rgba(5, 150, 105, 0.6)',
+                        borderColor: 'rgba(5, 150, 105, 1)',
+                        hoverBackgroundColor: 'rgba(4, 120, 87, 0.8)',
+                        hoverBorderColor: 'rgba(4, 120, 87, 1)'
+                    };
+                    break;
+                case 'memory':
+                    labelString = 'Memory (MB)';
+                     chartColors = {
+                        backgroundColor: 'rgba(107, 114, 128, 0.6)',
+                        borderColor: 'rgba(107, 114, 128, 1)',
+                        hoverBackgroundColor: 'rgba(55, 65, 81, 0.8)',
+                        hoverBorderColor: 'rgba(55, 65, 81, 1)'
+                    };
+                    break;
+            }
+
+            if (printerChart) {
+                printerChart.destroy();
+            }
+
+            printerChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: labelString,
+                        data: dataValues,
+                        backgroundColor: chartColors.backgroundColor,
+                        borderColor: chartColors.borderColor,
+                        borderWidth: 2,
+                        hoverBackgroundColor: chartColors.hoverBackgroundColor,
+                        hoverBorderColor: chartColors.hoverBorderColor
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        if (sortKey === 'price') {
+                                           label += new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(context.parsed.x);
+                                        } else {
+                                           label += new Intl.NumberFormat('en-IN').format(context.parsed.x);
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: labelString,
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        y: {
+                           ticks: {
+                                autoSkip: false,
+                                callback: function(value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    return label.length > 25 ? label.substring(0, 25) + '...' : label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        sortSelect.addEventListener('change', (e) => {
+            updateChart(e.target.value);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateChart('price');
+        });
+    </script>
+
+</body>
+</html>
