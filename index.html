@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Warm Neutrals -->
-    <!-- Application Structure Plan: The application is structured as an interactive dashboard. The primary user flow starts with a high-level visual comparison via a central bar chart, allowing users to grasp key differences at a glance. Below this, a grid of detailed cards provides comprehensive information for each product. The core interaction is a "Sort by" control that dynamically updates both the chart and the card grid, empowering users to analyze the data based on their priorities (e.g., Price, Speed). This structure was chosen to guide the user from a broad overview to specific details in an intuitive, task-oriented manner, making complex comparison easier than navigating a static table. -->
-    <!-- Visualization & Content Choices: The core of the report is comparing numerical specs. Goal: Compare. Viz: An interactive horizontal bar chart (Chart.js/Canvas) is used as it's ideal for comparing quantitative values across distinct categories (printers). Interaction: A dropdown allows users to change the metric being compared, instantly re-sorting and re-rendering the chart and detail cards. This provides a multi-faceted comparison within a single view. Goal: Inform/Organize. Viz: A responsive grid of HTML/Tailwind cards displays all printer specs. Interaction: These cards are linked to the chart; they reorder with the chart and could be enhanced with hover effects. Justification: This two-part structure (chart + cards) presents information in layers of complexity, improving user comprehension and preventing information overload. -->
+    <!-- Application Structure Plan: The application is structured as an interactive dashboard with an enhanced tabbed navigation system. The primary user flow now begins by selecting a vendor (Amazon or HP) or viewing all printers together using the new "All Printers" tab. Once a selection is made, the content for that group of printers is displayed, starting with a high-level visual comparison via a central bar chart. Below this, a grid of detailed cards provides comprehensive information for each product. The core interaction within each tab remains the "Sort by" control, which dynamically updates both the chart and the card grid, empowering users to analyze the data based on their priorities (e.g., Price, Speed, Refill Cost). This tabbed structure was chosen to logically segment data by source while also providing a holistic view, preventing information overload and offering a clear, intuitive path for users to explore and compare printers across different retailers. -->
+    <!-- Visualization & Content Choices: The core of the report is comparing numerical specs. Goal: Compare. Viz: An interactive horizontal bar chart (Chart.js/Canvas) is used as it's ideal for comparing quantitative values across distinct categories (printers). Interaction: A dropdown allows users to change the metric being compared, instantly re-sorting and re-rendering the chart and detail cards. This provides a multi-faceted comparison within a single view. Goal: Inform/Organize. Viz: A responsive grid of HTML/Tailwind cards displays all printer specs, now including refill costs and direct purchase/refill links. Interaction: These cards are linked to the chart; they reorder with the chart and could be enhanced with hover effects. Justification: This two-part structure (chart + cards) presents information in layers of complexity, improving user comprehension and preventing information overload. The addition of tabs now segments this comparison by vendor or shows all, enhancing clarity and flexibility. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
@@ -41,6 +41,27 @@
                 transform: translateY(0);
             }
         }
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            font-weight: 600;
+            color: #4b5563; /* gray-700 */
+            background-color: #e5e7eb; /* gray-200 */
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-button.active {
+            color: #78350f; /* amber-800 */
+            background-color: #ffffff;
+            border-bottom: 2px solid #f59e0b; /* amber-500 */
+        }
+        .tab-button:hover {
+            background-color: #d1d5db; /* gray-300 */
+        }
+        .tab-button.active:hover {
+            background-color: #ffffff;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,6 +76,12 @@
         </header>
 
         <main>
+            <div class="flex justify-center mb-6">
+                <button id="amazon-tab" class="tab-button active">Amazon Printers</button>
+                <button id="hp-tab" class="tab-button">HP Printers</button>
+                <button id="all-tab" class="tab-button">All Printers</button>
+            </div>
+
             <section id="visual-comparison" class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-8">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
                     <h2 class="text-xl font-bold text-gray-900 mb-2 sm:mb-0">Feature Comparison Chart</h2>
@@ -65,6 +92,7 @@
                             <option value="speed">Print Speed (Fastest First)</option>
                             <option value="tonerYield">Toner Yield (Highest First)</option>
                             <option value="memory">Memory (Highest First)</option>
+                            <option value="refillCost">Refill Cost (Lowest First)</option>
                         </select>
                     </div>
                 </div>
@@ -89,23 +117,43 @@
         </main>
         
         <footer class="text-center mt-12 py-4 border-t border-gray-200">
-            <p class="text-sm text-gray-500">Interactive dashboard created to simplify product comparison. Data sourced from public listings.</p>
+            <p class="text-sm text-gray-500">Interactive dashboard created to simplify product comparison. Data sourced from public listings and estimated refill costs.</p>
         </footer>
     </div>
 
     <script>
-        const printerData = [
-            { id: 1, name: "Brother HL-L5210DN", price: 22050, speed: 48, tonerYield: 11000, memory: 1024, connectivity: "LAN, USB", duplex: true, features: "New Launch, LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5" },
-            { id: 2, name: "Brother HL-B2080DW", price: 17999, speed: 34, tonerYield: 2600, memory: 64, connectivity: "Wi-Fi, USB", duplex: true, features: "Wireless, LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5" },
-            { id: 3, name: "Brother HL-L5000D", price: 21000, speed: 40, tonerYield: 8000, memory: 512, connectivity: "USB 2.0, Parallel", duplex: true, features: "1-line LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5" },
-            { id: 4, name: "Brother HL-L2460DN", price: 13500, speed: 34, tonerYield: 3000, memory: 128, connectivity: "LAN, USB", duplex: true, features: "New Launch, LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5" },
-            { id: 5, name: "Canon MF445dw", price: 61990, speed: 38, tonerYield: 3100, memory: 1024, connectivity: "Wireless, Mobile Ready", duplex: true, features: "All-in-One (MFP)", colourMode: "Monochrome", paperSizes: "A4, Letter, Legal" },
-            { id: 6, name: "HP Laserjet Pro M501dn", price: 44690, speed: 45, tonerYield: 9000, memory: 256, connectivity: "LAN, USB", duplex: true, features: "2-line LCD", colourMode: "Monochrome", paperSizes: "A4, Letter, Legal" }
+        const amazonPrinterData = [
+            { id: 1, name: "Brother HL-L5210DN", price: 22050, speed: 48, tonerYield: 11000, memory: 1024, connectivity: "LAN, USB", duplex: true, features: "New Launch, LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5", refillCost: 1484, printerLink: "https://amzn.in/d/hYxNArK", refillLink: "https://www.flipkart.com/jk-toners-tn3608-toner-cartridge-brother-dcp-l5660dn-dcp-l5915dw-hl-l5210dn-hl-l5210dw-black-ink/p/itmf637fa1711fbe" },
+            { id: 2, name: "Brother HL-B2080DW", price: 17999, speed: 34, tonerYield: 2600, memory: 64, connectivity: "Wi-Fi, USB", duplex: true, features: "Wireless, LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5", refillCost: 820, printerLink: "https://amzn.in/d/ajQBLCn", refillLink: "https://ltonlinestore.com/Brother-TN-B021-Toner-B2000d-B2080dw-B2100db-B7715dw-p124723561" },
+            { id: 3, name: "Brother HL-L5000D", price: 21000, speed: 40, tonerYield: 8000, memory: 512, connectivity: "USB 2.0, Parallel", duplex: true, features: "1-line LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5", refillCost: 1352, printerLink: "https://amzn.in/d/57y2lyu", refillLink: "https://www.flipkart.com/jet-toner-tn-880-3428-tn-3448-3478-powder-compatible-brother-dcp-l5500dn-l5600dn-l5650dn-hl-l5000d-l5100dn-l5200dw-l5200dwt-l6200dw-l6200dwt-l6250dw-l6300dw-l6400dw-l6400dwt-l5200-hll6200-l6400-mfc-l5700dw-l5800dw-l5850dw-l5900dw-printers-black-ink/p/itmf41732b4a688d" },
+            { id: 4, name: "Brother HL-L2460DN", price: 13500, speed: 34, tonerYield: 3000, memory: 128, connectivity: "LAN, USB", duplex: true, features: "New Launch, LCD Display", colourMode: "Monochrome", paperSizes: "A4, Letter, A5", refillCost: 749, printerLink: "https://amzn.in/d/fZCwhtA", refillLink: "https://www.flipkart.com/morel-tn2365-toner-powder-use-brother-hl-l2300-l2305-l2320-l2321-2340-l2361-l2360-l2365-l2366-l2380-l2500-l2520-l2540-l2541-l2560-l2680-l2700-l2701-l2703-2705-l2707-l2720-l2740-printers-pack-1-black-ink/p/itmf7ed9bf1c0f8c" },
+            { id: 5, name: "Canon MF445dw", price: 61990, speed: 38, tonerYield: 3100, memory: 1024, connectivity: "Wireless, Mobile Ready", duplex: true, features: "All-in-One (MFP)", colourMode: "Monochrome", paperSizes: "A4, Letter, Legal", refillCost: 600, printerLink: "https://amzn.in/d/8TAfDnc", refillLink: "https://www.indiamart.com/proddetail/canon-057-toner-cartridge-for-use-in-mf449dw-mf448dw-mf445dw-lbp228dw-lbp227dw-lbp226dw-2854328502188.html" },
+            { id: 6, name: "HP Laserjet Pro M501dn", price: 44690, speed: 45, tonerYield: 9000, memory: 256, connectivity: "LAN, USB", duplex: true, features: "2-line LCD", colourMode: "Monochrome", paperSizes: "A4, Letter, Legal", refillCost: 799, printerLink: "https://amzn.in/d/faBexOu", refillLink: "https://www.flipkart.com/premium-toner-cartridge-hp-laserjet-m501n-mfp-m501dn-m506dn-m506n-m506x-m527dn-m527f-flow-m527z-mfp-black-ink/p/itm937cfeecb263c" },
+            { id: 7, name: "Brother MFC-L5915DW", price: 53990, speed: 48, tonerYield: 11000, memory: 1024, connectivity: "WiFi, WiFi Direct, LAN, USB", duplex: true, features: "New Launch, 5-inch Touchscreen, 70-page ADF, Print/Scan/Copy/Fax", colourMode: "Monochrome", paperSizes: "A4, Letter, Legal", refillCost: 1484, printerLink: "https://amzn.in/d/cjSe9TC", refillLink: "https://www.flipkart.com/jk-toners-tn3608-toner-cartridge-brother-dcp-l5660dn-dcp-l5915dw-hl-l5210dn-hl-l5210dw-black-ink/p/itmf637fa1711fbe" },
+            { id: 8, name: "Brother DCP-L5660DN", price: 34200, speed: 46, tonerYield: 11000, memory: 512, connectivity: "LAN, USB", duplex: true, features: "New Launch, 3.5-inch Touch Screen, 70-page ADF, Print/Scan/Copy", colourMode: "Monochrome", paperSizes: "A4, Letter, Legal", refillCost: 1200, printerLink: "https://amzn.in/d/cLXW5N9", refillLink: "https://www.indiamart.com/proddetail/tn3608-tn-3608-toner-cartridge-with-chip-for-brother-dcp-l5660dn-dcp-l5915dw-hl-l5210dn-hl-l5210dw-2855599579055.html" }
         ];
+
+        const hpPrinterData = [
+            { id: 9, name: "HP LaserJet MFP M72630dn", price: 116826, speed: 30, tonerYield: 320000, memory: 1024, connectivity: "USB, Host USB, Gigabit Ethernet", duplex: true, features: "A3 B&W MFP, Print/Copy/Scan/Fax, ADF", colourMode: "Monochrome", paperSizes: "A3, A4, A5, B4, B5", refillCost: 1200, printerLink: "https://www.hp.com/in-en/shop/hp-laserjet-mfp-m72630dn-printer-2zn50a.html", refillLink: "https://www.indiamart.com/proddetail/hp-laserjet-mfp-m72625-m72630-toner-cartridge-compatible-2853870896088.html" },
+            { id: 10, name: "HP LaserJet MFP M42625dn", price: 65000, speed: 25, tonerYield: 3300, memory: 256, connectivity: "USB 2.0, Ethernet", duplex: true, features: "Print/Copy/Scan", colourMode: "Monochrome", paperSizes: "A3, A4, A5, B4, B5", refillCost: 1521, printerLink: "https://www.hp.com/in-en/shop/hp-laserjet-mfp-m42625dn-8af52a.html", refillLink: "https://www.hp.com/in-en/shop/hp-335x-high-yield-black-original-laserjet-toner-cartridge-w1335x.html" },
+            { id: 11, name: "HP LaserJet MFP M438nda", price: 83000, speed: 24, tonerYield: 3300, memory: 256, connectivity: "USB 2.0, Ethernet", duplex: true, features: "Print/Copy/Scan, 2 Paper Trays", colourMode: "Monochrome", paperSizes: "A4, A3, A5, A6, B4 (JIS), B5 (JIS)", refillCost: 652, printerLink: "https://www.hp.com/in-en/shop/hp-laserjet-mfp-m438nda-8af45a.html", refillLink: "https://www.indiamart.com/proddetail/hp-335x-w1335x-original-toner-cartridge-for-hp-laserjet-mfp-m438-m438dn-m438nda-m440-m442-m443-23787632430.html" }
+        ];
+
+        const allPrinterData = {
+            'amazon': amazonPrinterData,
+            'hp': hpPrinterData,
+            'all': [...amazonPrinterData, ...hpPrinterData] // Combined data for the new tab
+        };
+
+        let currentSource = 'amazon';
 
         const detailsGrid = document.getElementById('details-grid');
         const sortSelect = document.getElementById('sort-select');
         const ctx = document.getElementById('printerChart').getContext('2d');
+        const amazonTab = document.getElementById('amazon-tab');
+        const hpTab = document.getElementById('hp-tab');
+        const allTab = document.getElementById('all-tab'); // New tab element
+
         let printerChart;
 
         const renderDetails = (data) => {
@@ -117,8 +165,11 @@
                 
                 let connectivityIcons = '';
                 if (printer.connectivity.includes('Wi-Fi') || printer.connectivity.includes('Wireless')) connectivityIcons += '<span title="Wi-Fi" class="text-xl">📶</span>';
-                if (printer.connectivity.includes('LAN')) connectivityIcons += '<span title="LAN" class="text-xl">🌐</span>';
+                if (printer.connectivity.includes('LAN') || printer.connectivity.includes('Ethernet')) connectivityIcons += '<span title="LAN/Ethernet" class="text-xl">🌐</span>';
                 if (printer.connectivity.includes('USB')) connectivityIcons += '<span title="USB" class="text-xl">🔌</span>';
+                if (printer.connectivity.includes('Direct')) connectivityIcons += '<span title="Wi-Fi Direct" class="text-xl">📡</span>';
+                if (printer.connectivity.includes('Host USB')) connectivityIcons += '<span title="Host USB" class="text-xl">💻</span>';
+
 
                 card.innerHTML = `
                     <h3 class="text-lg font-bold text-gray-900 mb-2">${printer.name}</h3>
@@ -131,9 +182,14 @@
                         <p class="flex justify-between items-center"><strong>Connectivity:</strong> <span class="flex gap-2">${connectivityIcons}</span></p>
                         <p class="flex justify-between"><strong>Colour Mode:</strong> <span class="font-semibold">${printer.colourMode}</span></p>
                         <p class="flex justify-between"><strong>Paper Sizes:</strong> <span class="font-semibold">${printer.paperSizes}</span></p>
+                        <p class="flex justify-between"><strong>Est. Refill Cost:</strong> <span class="font-semibold">₹${printer.refillCost.toLocaleString('en-IN')}</span></p>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
                         <p class="text-sm text-gray-600 font-medium"><strong>Key Feature:</strong> ${printer.features}</p>
+                    </div>
+                    <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                        <a href="${printer.printerLink}" target="_blank" class="flex-1 bg-amber-600 text-white text-center py-2 px-4 rounded-lg hover:bg-amber-700 transition-colors duration-200">Buy Printer</a>
+                        ${printer.refillLink ? `<a href="${printer.refillLink}" target="_blank" class="flex-1 bg-gray-700 text-white text-center py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors duration-200">Buy Refill</a>` : ''}
                     </div>
                 `;
                 detailsGrid.appendChild(card);
@@ -141,12 +197,13 @@
         };
 
         const updateChart = (sortKey) => {
+            let activeData = allPrinterData[currentSource];
             let ascending = true;
-            if (sortKey === 'speed' || sortKey === 'tonerYield' || sortKey === 'memory') {
-                ascending = false;
+            if (sortKey === 'speed' || sortKey === 'tonerYield' || sortKey === 'memory' || sortKey === 'refillCost') {
+                ascending = false; // For refill cost, lower is better, so sort ascending for chart display
             }
 
-            const sortedData = [...printerData]
+            const sortedData = [...activeData]
                 .filter(p => p[sortKey] > 0)
                 .sort((a, b) => {
                     return ascending ? a[sortKey] - b[sortKey] : b[sortKey] - a[sortKey];
@@ -196,6 +253,15 @@
                         hoverBorderColor: 'rgba(55, 65, 81, 1)'
                     };
                     break;
+                case 'refillCost':
+                    labelString = 'Est. Refill Cost (INR)';
+                    chartColors = {
+                        backgroundColor: 'rgba(234, 88, 12, 0.6)', /* Orange-600 */
+                        borderColor: 'rgba(234, 88, 12, 1)',
+                        hoverBackgroundColor: 'rgba(194, 65, 12, 0.8)', /* Orange-700 */
+                        hoverBorderColor: 'rgba(194, 65, 12, 1)'
+                    };
+                    break;
             }
 
             if (printerChart) {
@@ -232,7 +298,7 @@
                                         label += ': ';
                                     }
                                     if (context.parsed.x !== null) {
-                                        if (sortKey === 'price') {
+                                        if (sortKey === 'price' || sortKey === 'refillCost') {
                                            label += new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(context.parsed.x);
                                         } else {
                                            label += new Intl.NumberFormat('en-IN').format(context.parsed.x);
@@ -269,12 +335,32 @@
             });
         };
 
+        const switchTab = (source) => {
+            currentSource = source;
+            amazonTab.classList.remove('active');
+            hpTab.classList.remove('active');
+            allTab.classList.remove('active');
+
+            if (source === 'amazon') {
+                amazonTab.classList.add('active');
+            } else if (source === 'hp') {
+                hpTab.classList.add('active');
+            } else { // 'all'
+                allTab.classList.add('active');
+            }
+            updateChart(sortSelect.value);
+        };
+
         sortSelect.addEventListener('change', (e) => {
             updateChart(e.target.value);
         });
 
+        amazonTab.addEventListener('click', () => switchTab('amazon'));
+        hpTab.addEventListener('click', () => switchTab('hp'));
+        allTab.addEventListener('click', () => switchTab('all')); // Event listener for the new tab
+
         document.addEventListener('DOMContentLoaded', () => {
-            updateChart('price');
+            switchTab('amazon'); // Initialize with Amazon printers
         });
     </script>
 
